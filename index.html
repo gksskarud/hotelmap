@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <style>
-    /* ====== 공통 스타일 ====== */
     body {
       font-family: "Segoe UI", sans-serif;
       margin: 0;
@@ -35,7 +34,6 @@
       gap: 15px;
     }
 
-    /* 🌗 테마 전환 버튼 */
     #theme-toggle {
       padding: 8px 15px;
       font-size: 15px;
@@ -52,7 +50,6 @@
       transform: scale(1.05);
     }
 
-    /* 🧊 반투명 검색창 */
     #search-box {
       margin: 25px auto;
       background: rgba(255, 255, 255, 0.15);
@@ -94,6 +91,16 @@
       transform: scale(1.05);
     }
 
+    /* 🗑 삭제 버튼 전용 스타일 */
+    #clear-history {
+      background: rgba(255, 80, 80, 0.8);
+      margin-left: 5px;
+    }
+
+    #clear-history:hover {
+      background: rgba(255, 50, 50, 1);
+    }
+
     #map {
       width: 90%;
       height: 450px;
@@ -126,7 +133,6 @@
       transform: scale(1.03);
     }
 
-    /* 📍 마커 애니메이션 */
     .leaflet-marker-icon {
       transition: transform 0.3s ease;
     }
@@ -134,7 +140,6 @@
       transform: scale(1.3);
     }
 
-    /* 🌞 라이트 테마 */
     body.light-mode {
       background: linear-gradient(rgba(255,255,255,0.4), rgba(255,255,255,0.4)),
         url("https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80")
@@ -188,6 +193,7 @@
     <select id="history" onchange="loadHistory(this.value)">
       <option value="">📜 최근 검색</option>
     </select>
+    <button id="clear-history" onclick="clearHistory()">🗑 삭제</button>
   </div>
 
   <div id="map"></div>
@@ -220,7 +226,6 @@
       clearMarkers();
       document.getElementById("result-list").innerHTML = "<li>🔍 검색 중...</li>";
 
-      // 한글 자동 번역 (Geoapify는 영어 인식에 강함)
       if (/[가-힣]/.test(keyword)) {
         const trans = await fetch(
           `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=en&dt=t&q=${encodeURIComponent(keyword)}`
@@ -295,7 +300,6 @@
       markers = [];
     }
 
-    // 🔄 검색 기록 저장
     function saveHistory(keyword) {
       let history = JSON.parse(localStorage.getItem("searchHistory") || "[]");
       if (!history.includes(keyword)) {
@@ -317,7 +321,13 @@
       searchRegion();
     }
 
-    // 🌙 다크/라이트 모드 전환
+    /* 🗑 전체 삭제 함수 */
+    function clearHistory() {
+      localStorage.removeItem("searchHistory");
+      updateHistoryUI();
+      alert("최근 검색 기록이 모두 삭제되었습니다.");
+    }
+
     function toggleTheme() {
       const body = document.body;
       const btn = document.getElementById("theme-toggle");
