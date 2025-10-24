@@ -14,8 +14,8 @@
     button:hover { background: #357ab8; }
     #map { width: 100%; height: 450px; margin-top: 10px; }
     #result-list { list-style: none; padding: 0; max-width: 600px; margin: 20px auto; text-align: left; }
-    #result-list li { background: white; padding: 10px; margin-bottom: 8px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; }
-    #result-list li:hover { background: #e6f0ff; }
+    #result-list li { background: white; padding: 10px; margin-bottom: 8px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s; }
+    #result-list li:hover { background: #e6f0ff; transform: scale(1.02); }
   </style>
 </head>
 <body>
@@ -56,14 +56,14 @@
       clearMarkers();
       document.getElementById("result-list").innerHTML = "검색 중...";
 
-      // 🔤 한글일 경우 자동 번역 (Geoapify 인식 가능하게)
+      // 한글 자동 번역 (Geoapify는 영어 인식이 잘 됨)
       if (/[가-힣]/.test(keyword)) {
         const trans = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=en&dt=t&q=${encodeURIComponent(keyword)}`);
         const data = await trans.json();
-        keyword = data[0][0][0]; // 번역 결과
+        keyword = data[0][0][0];
       }
 
-      // 1️⃣ 지역 이름으로 좌표 검색
+      // 1️⃣ 지역 좌표 검색
       const geoUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(keyword)}&apiKey=${apiKey}`;
       const geoRes = await fetch(geoUrl);
       const geoData = await geoRes.json();
@@ -96,6 +96,7 @@
       displayPlaces(poiData.features);
     }
 
+    // ✅ 결과 목록 표시 + 네이버지도 연결
     function displayPlaces(data) {
       const list = document.getElementById("result-list");
       list.innerHTML = "";
@@ -119,6 +120,9 @@
         li.onclick = () => {
           map.setView([lat, lon], 16);
           marker.openPopup();
+          // 🔗 클릭 시 네이버지도에서 열기
+          const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(name)}`;
+          window.open(naverUrl, "_blank");
         };
         list.appendChild(li);
       });
