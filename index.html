@@ -47,7 +47,7 @@
     }
     #map {
       width: 100%;
-      height: 400px;
+      height: 450px;
       margin-top: 10px;
     }
     #result-list {
@@ -70,8 +70,8 @@
     }
   </style>
 
-  <!-- Kakao 지도 SDK (사용자 JavaScript 키 적용) -->
-  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=b710bd3f6d7cb40de7aab859a69a495d&libraries=services&autoload=false"></script>
+  <!-- ✅ Kakao 지도 SDK (JavaScript 키 사용) -->
+  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=b710bd3f6d7cb40de7aab859a69a495d&libraries=services"></script>
 </head>
 <body>
   <header>지역 검색으로 호텔 + 관광지 찾기</header>
@@ -89,20 +89,8 @@
     let map, geocoder, places, infoWindow;
     let markers = [];
 
+    // ✅ 지도 초기화
     window.onload = function () {
-      document.getElementById("loading").style.display = 'block';
-      
-      if (window.kakao && window.kakao.maps) {
-        kakao.maps.load(() => {
-          initMap();
-          document.getElementById("loading").style.display = 'none';
-        });
-      } else {
-        console.error("Kakao Maps SDK가 로드되지 않았습니다.");
-      }
-    };
-
-    function initMap() {
       const container = document.getElementById('map');
       const options = {
         center: new kakao.maps.LatLng(37.5665, 126.9780),
@@ -112,12 +100,13 @@
       geocoder = new kakao.maps.services.Geocoder();
       places = new kakao.maps.services.Places();
       infoWindow = new kakao.maps.InfoWindow({ zIndex: 1 });
-    }
+    };
 
+    // ✅ 지역명으로 검색
     function searchRegion() {
       const keyword = document.getElementById('keyword').value.trim();
       if (!keyword) return alert("지역명을 입력하세요!");
-      if (!geocoder || !places || !map) return alert("지도가 아직 초기화되지 않았습니다.");
+      if (!geocoder || !places) return alert("지도가 아직 초기화되지 않았습니다.");
 
       clearMarkers();
       document.getElementById('result-list').innerHTML = '';
@@ -136,6 +125,7 @@
       });
     }
 
+    // ✅ 카테고리로 장소 검색
     function searchPlaces(location, category) {
       places.categorySearch(category, function (data, status) {
         if (status === kakao.maps.services.Status.OK) {
@@ -148,6 +138,7 @@
       });
     }
 
+    // ✅ 결과 표시
     function displayPlaces(data, category) {
       const list = document.getElementById('result-list');
 
@@ -180,6 +171,7 @@
       });
     }
 
+    // ✅ 마커 초기화
     function clearMarkers() {
       markers.forEach(marker => marker.setMap(null));
       markers = [];
