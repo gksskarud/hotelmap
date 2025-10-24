@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>호텔 + 관광지 검색 지도</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+      text-align: center;
+    }
+    header {
+      background: #4a90e2;
+      color: white;
+      padding: 20px;
+      font-size: 24px;
+    }
+    #search-box {
+      margin: 20px;
+    }
+    input[type="text"] {
+      width: 250px;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #357ab8;
+    }
+    #loading {
+      display: none;
+      font-size: 16px;
+      color: #666;
+      margin-top: 10px;
+    }
+    #map {
+      width: 100%;
+      height: 400px;
+      margin-top: 10px;
+    }
+    #result-list {
+      list-style: none;
+      padding: 0;
+      max-width: 600px;
+      margin: 20px auto;
+      text-align: left;
+    }
+    #result-list li {
+      background: white;
+      padding: 10px;
+      margin-bottom: 8px;
+      border-radius: 5px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      cursor: pointer;
+    }
+    #result-list li:hover {
+      background: #e6f0ff;
+    }
+  </style>
+
+  <!-- Kakao 지도 SDK (사용자 JavaScript 키 적용) -->
+  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=b710bd3f6d7cb40de7aab859a69a495d&libraries=services&autoload=false"></script>
+</head>
+<body>
+  <header>지역 검색으로 호텔 + 관광지 찾기</header>
+
+  <div id="search-box">
+    <input type="text" id="keyword" placeholder="예: 부산, 제주도">
+    <button onclick="searchRegion()">검색</button>
+    <div id="loading">지도를 불러오는 중...</div>
+  </div>
+
+  <div id="map"></div>
+  <ul id="result-list"></ul>
+
+  <script>
+    let map, geocoder, places, infoWindow;
+    let markers = [];
+
+    window.onload = function () {
+      document.getElementById("loading").style.display = 'block';
+      
+      if (window.kakao && window.kakao.maps) {
+        kakao.maps.load(() => {
+          initMap();
+          document.getElementById("loading").style.display = 'none';
+        });
+      } else {
+        console.error("Kakao Maps SDK가 로드되지 않았습니다.");
+      }
+    };
+
+    function initMap() {
+      const container = document.getElementById('map');
+      const options = {
+        center: new kakao.maps.LatLng(37.5665, 126.9780),
+        level: 5
+      };
+      map = new kakao.maps.Map(container, options);
+      geocoder = new kakao.maps.services.Geocoder();
+      places = new kakao.maps.services.Places();
+      infoWindow = new kakao.maps.InfoWindow({ zIndex: 1 });
+    }
+
+    function searchRegion() {
+      const keyword = document.getElementById('keyword').value.trim();
+      if (!keyword) return alert("지역명을 입력하세요!");
+      if (!geocoder || !places || !map) return alert("지도가 아직 초기화되지 않았습니다.");
+
+      clearMarkers();
+      document.getElementById('result-list').innerHTML = '';
+      document.getElementById("loading").style.display = 'block';
+
+      geocoder.addressSearch(keyword, function (result, status) {
+        if (status === kakao.maps.services.Status.OK) {
+          const location = new kakao.maps.LatLng(result[0].y, result[0].x);
+          map.setCenter(location);
+          searchPlaces(location, 'AD5'); // 호텔
+          searchPlaces(location, 'AT4'); // 관광지
+        } else {
+          alert("지역을 찾을 수 없습니다.");
+          document.getElementById("loading").style.display = 'none';
+        }
+      });
+    }
+
+    function searchPlaces(location, category) {
+      places.categorySearch(category, function (data, status) {
+        if (status === kakao.maps.services.Status.OK) {
+          displayPlaces(data, category);
+        }
+        document.getElementById("loading").style.display = 'none';
+      }, {
+        location: location,
+        radius: 5000
+      });
+    }
+
+    function displayPlaces(data, category) {
+      const list = document.getElementById('result-list');
+
+      data.forEach(place => {
+        const position = new kakao.maps.LatLng(place.y, place.x);
+        const marker = new kakao.maps.Marker({ map: map, position: position });
+        markers.push(marker);
+
+        const content = `
+          <div style="padding:5px;">
+            <b>${place.place_name}</b><br>
+            ${place.address_name || ''}<br>
+            ${place.phone || ''}
+          </div>`;
+
+        kakao.maps.event.addListener(marker, 'click', function () {
+          infoWindow.setContent(content);
+          infoWindow.open(map, marker);
+        });
+
+        const li = document.createElement('li');
+        li.textContent = `[${category === 'AD5' ? '호텔' : '관광지'}] ${place.place_name}`;
+        li.onclick = function () {
+          map.setCenter(marker.getPosition());
+          map.setLevel(4);
+          infoWindow.setContent(content);
+          infoWindow.open(map, marker);
+        };
+        list.appendChild(li);
+      });
+    }
+
+    function clearMarkers() {
+      markers.forEach(marker => marker.setMap(null));
+      markers = [];
+      if (infoWindow) infoWindow.close();
+    }
+  </script>
+</body>
+</html>
