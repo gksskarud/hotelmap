@@ -117,26 +117,32 @@
       text-align: left;
     }
 
-    #result-list li {
+    .result-item {
+      display: flex;
+      align-items: center;
+      gap: 15px;
       background: rgba(255, 255, 255, 0.1);
-      padding: 10px 15px;
-      margin-bottom: 8px;
-      border-radius: 8px;
-      box-shadow: 0 1px 4px rgba(255, 255, 255, 0.2);
+      padding: 12px 15px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      box-shadow: 0 1px 5px rgba(255, 255, 255, 0.2);
       cursor: pointer;
       transition: 0.25s;
     }
 
-    #result-list li:hover {
+    .result-item:hover {
       background: rgba(255, 255, 255, 0.25);
       transform: scale(1.03);
     }
 
-    .leaflet-marker-icon {
-      transition: transform 0.3s ease;
+    .icon-img {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
     }
-    .leaflet-marker-icon:hover {
-      transform: scale(1.3);
+
+    .result-text {
+      line-height: 1.4;
     }
 
     body.light-mode {
@@ -165,12 +171,11 @@
       border: 1px solid #ccc;
     }
 
-    body.light-mode #result-list li {
+    body.light-mode .result-item {
       background: rgba(255, 255, 255, 0.8);
       color: #222;
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
     }
-
   </style>
 </head>
 <body>
@@ -199,7 +204,6 @@
   <ul id="result-list"></ul>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
   <script>
     const apiKey = "12fc29b53c4f41c7bff006089808d0ad";
     let map = L.map("map").setView([37.5665, 126.9780], 12);
@@ -283,19 +287,34 @@
         marker.bindPopup(`<b>${name}</b><br>${addr}<br><small>${cat}</small>`);
         markers.push(marker);
 
-        // ✅ 카테고리별 이모지 지정
-        let emoji = "📍";
-        if (cat.includes("hotel")) emoji = "🏨";
-        else if (cat.includes("cafe")) emoji = "☕";
-        else if (cat.includes("tourism")) emoji = "🏞️";
-        else if (cat.includes("restaurant")) emoji = "🍽️";
+        // ✅ 카테고리별 아이콘 이미지 지정
+        let iconUrl =
+          "https://cdn-icons-png.flaticon.com/512/565/565547.png"; // 기본 아이콘
+        if (cat.includes("hotel"))
+          iconUrl = "https://cdn-icons-png.flaticon.com/512/139/139899.png"; // 호텔
+        else if (cat.includes("cafe"))
+          iconUrl = "https://cdn-icons-png.flaticon.com/512/924/924514.png"; // 카페
+        else if (cat.includes("restaurant"))
+          iconUrl = "https://cdn-icons-png.flaticon.com/512/3075/3075977.png"; // 음식점
+        else if (cat.includes("tourism"))
+          iconUrl = "https://cdn-icons-png.flaticon.com/512/854/854929.png"; // 관광지
 
         const li = document.createElement("li");
-        li.innerHTML = `<strong>${emoji} [${cat}]</strong> ${name}<br><small>${addr}</small>`;
+        li.className = "result-item";
+        li.innerHTML = `
+          <img src="${iconUrl}" class="icon-img" alt="icon">
+          <div class="result-text">
+            <strong>${name}</strong><br>
+            <small>${addr}</small>
+          </div>
+        `;
         li.onclick = () => {
           map.flyTo([lat, lon], 16);
           marker.openPopup();
-          window.open(`https://map.naver.com/v5/search/${encodeURIComponent(name)}`, "_blank");
+          window.open(
+            \`https://map.naver.com/v5/search/\${encodeURIComponent(name)}\`,
+            "_blank"
+          );
         };
         list.appendChild(li);
       });
@@ -318,7 +337,9 @@
     function updateHistoryUI() {
       const history = JSON.parse(localStorage.getItem("searchHistory") || "[]");
       const sel = document.getElementById("history");
-      sel.innerHTML = `<option value="">📜 최근 검색</option>` + history.map(h => `<option value="${h}">${h}</option>`).join("");
+      sel.innerHTML =
+        `<option value="">📜 최근 검색</option>` +
+        history.map((h) => `<option value="${h}">${h}</option>`).join("");
     }
 
     function loadHistory(value) {
