@@ -1,11 +1,19 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>호텔 + 관광지 검색 지도</title>
+  <meta charset="UTF-8" />
+  <title>호텔 + 관광지 검색 지도 (GitHub 전용)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Leaflet 스타일 -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
+      font-family: "Segoe UI", sans-serif;
       margin: 0;
       padding: 0;
       background: #f9f9f9;
@@ -39,12 +47,6 @@
     button:hover {
       background: #357ab8;
     }
-    #loading {
-      display: none;
-      font-size: 16px;
-      color: #666;
-      margin-top: 10px;
-    }
     #map {
       width: 100%;
       height: 450px;
@@ -69,113 +71,96 @@
       background: #e6f0ff;
     }
   </style>
-
-  <!-- ✅ Kakao 지도 SDK (JavaScript 키 사용) -->
-  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=b710bd3f6d7cb40de7aab859a69a495d&libraries=services"></script>
 </head>
 <body>
-  <header>지역 검색으로 호텔 + 관광지 찾기</header>
+  <header>지역 검색으로 호텔 + 관광지 찾기 🌏</header>
 
   <div id="search-box">
-    <input type="text" id="keyword" placeholder="예: 부산, 제주도">
+    <input type="text" id="keyword" placeholder="예: 부산, 제주도" />
     <button onclick="searchRegion()">검색</button>
-    <div id="loading">지도를 불러오는 중...</div>
   </div>
 
   <div id="map"></div>
   <ul id="result-list"></ul>
 
+  <!-- Leaflet 스크립트 -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
   <script>
-    let map, geocoder, places, infoWindow;
+    let map = L.map("map").setView([37.5665, 126.9780], 12);
+
+    // 지도 타일 (OpenStreetMap)
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
+
     let markers = [];
 
-    // ✅ 지도 초기화
-    window.onload = function () {
-      const container = document.getElementById('map');
-      const options = {
-        center: new kakao.maps.LatLng(37.5665, 126.9780),
-        level: 5
-      };
-      map = new kakao.maps.Map(container, options);
-      geocoder = new kakao.maps.services.Geocoder();
-      places = new kakao.maps.services.Places();
-      infoWindow = new kakao.maps.InfoWindow({ zIndex: 1 });
-    };
-
-    // ✅ 지역명으로 검색
-    function searchRegion() {
-      const keyword = document.getElementById('keyword').value.trim();
+    // 🔍 지역 검색
+    async function searchRegion() {
+      const keyword = document.getElementById("keyword").value.trim();
       if (!keyword) return alert("지역명을 입력하세요!");
-      if (!geocoder || !places) return alert("지도가 아직 초기화되지 않았습니다.");
 
       clearMarkers();
-      document.getElementById('result-list').innerHTML = '';
-      document.getElementById("loading").style.display = 'block';
+      document.getElementById("result-list").innerHTML = "검색 중...";
 
-      geocoder.addressSearch(keyword, function (result, status) {
-        if (status === kakao.maps.services.Status.OK) {
-          const location = new kakao.maps.LatLng(result[0].y, result[0].x);
-          map.setCenter(location);
-          searchPlaces(location, 'AD5'); // 호텔
-          searchPlaces(location, 'AT4'); // 관광지
-        } else {
-          alert("지역을 찾을 수 없습니다.");
-          document.getElementById("loading").style.display = 'none';
-        }
-      });
+      // 1️⃣ 지역 이름 → 좌표 변환 (Nominatim)
+      const geoRes = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          keyword
+        )}`
+      );
+      const geoData = await geoRes.json();
+      if (!geoData.length) return alert("지역을 찾을 수 없습니다.");
+
+      const { lat, lon } = geoData[0];
+      map.setView([lat, lon], 13);
+
+      // 2️⃣ 호텔 + 관광지 검색 (Nominatim POI)
+      const searchQuery = `${keyword} 호텔 OR 관광지`;
+      const poiRes = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&limit=15&q=${encodeURIComponent(
+          searchQuery
+        )}`
+      );
+      const poiData = await poiRes.json();
+
+      displayPlaces(poiData);
     }
 
-    // ✅ 카테고리로 장소 검색
-    function searchPlaces(location, category) {
-      places.categorySearch(category, function (data, status) {
-        if (status === kakao.maps.services.Status.OK) {
-          displayPlaces(data, category);
-        }
-        document.getElementById("loading").style.display = 'none';
-      }, {
-        location: location,
-        radius: 5000
-      });
-    }
+    // 📍 결과 표시
+    function displayPlaces(data) {
+      const list = document.getElementById("result-list");
+      list.innerHTML = "";
+      if (!data.length) {
+        list.innerHTML = "<li>검색 결과가 없습니다.</li>";
+        return;
+      }
 
-    // ✅ 결과 표시
-    function displayPlaces(data, category) {
-      const list = document.getElementById('result-list');
-
-      data.forEach(place => {
-        const position = new kakao.maps.LatLng(place.y, place.x);
-        const marker = new kakao.maps.Marker({ map: map, position: position });
+      data.forEach((place) => {
+        const marker = L.marker([place.lat, place.lon]).addTo(map);
+        marker.bindPopup(`<b>${place.display_name}</b>`);
         markers.push(marker);
 
-        const content = `
-          <div style="padding:5px;">
-            <b>${place.place_name}</b><br>
-            ${place.address_name || ''}<br>
-            ${place.phone || ''}
-          </div>`;
-
-        kakao.maps.event.addListener(marker, 'click', function () {
-          infoWindow.setContent(content);
-          infoWindow.open(map, marker);
-        });
-
-        const li = document.createElement('li');
-        li.textContent = `[${category === 'AD5' ? '호텔' : '관광지'}] ${place.place_name}`;
-        li.onclick = function () {
-          map.setCenter(marker.getPosition());
-          map.setLevel(4);
-          infoWindow.setContent(content);
-          infoWindow.open(map, marker);
+        const li = document.createElement("li");
+        li.textContent = place.display_name;
+        li.onclick = () => {
+          map.setView([place.lat, place.lon], 16);
+          marker.openPopup();
         };
         list.appendChild(li);
       });
     }
 
-    // ✅ 마커 초기화
+    // 🧹 마커 초기화
     function clearMarkers() {
-      markers.forEach(marker => marker.setMap(null));
+      markers.forEach((m) => map.removeLayer(m));
       markers = [];
-      if (infoWindow) infoWindow.close();
     }
   </script>
 </body>
