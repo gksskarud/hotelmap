@@ -135,11 +135,10 @@
       transform: scale(1.03);
     }
 
-    .thumb-img {
-      width: 70px;
-      height: 70px;
-      border-radius: 10px;
-      object-fit: cover;
+    .icon-img {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
     }
 
     .result-text {
@@ -288,23 +287,22 @@
         marker.bindPopup(`<b>${name}</b><br>${addr}<br><small>${cat}</small>`);
         markers.push(marker);
 
-        // ✅ 카테고리별 대표 사진 설정
-        let imgUrl =
-          "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=60"; // 기본 음식
-
+        // ✅ 카테고리별 아이콘 이미지 지정
+        let iconUrl =
+          "https://cdn-icons-png.flaticon.com/512/565/565547.png"; // 기본 아이콘
         if (cat.includes("hotel"))
-          imgUrl = "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=400&q=60"; // 호텔
+          iconUrl = "https://cdn-icons-png.flaticon.com/512/139/139899.png"; // 호텔
         else if (cat.includes("cafe"))
-          imgUrl = "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=400&q=60"; // 카페
-        else if (cat.includes("tourism"))
-          imgUrl = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=60"; // 관광지
+          iconUrl = "https://cdn-icons-png.flaticon.com/512/924/924514.png"; // 카페
         else if (cat.includes("restaurant"))
-          imgUrl = "https://images.unsplash.com/photo-1555992336-cbf7bfa17380?auto=format&fit=crop&w=400&q=60"; // 음식점
+          iconUrl = "https://cdn-icons-png.flaticon.com/512/3075/3075977.png"; // 음식점
+        else if (cat.includes("tourism"))
+          iconUrl = "https://cdn-icons-png.flaticon.com/512/854/854929.png"; // 관광지
 
         const li = document.createElement("li");
         li.className = "result-item";
         li.innerHTML = `
-          <img src="${imgUrl}" class="thumb-img" alt="category image">
+          <img src="${iconUrl}" class="icon-img" alt="icon">
           <div class="result-text">
             <strong>${name}</strong><br>
             <small>${addr}</small>
