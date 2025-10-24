@@ -4,77 +4,32 @@
   <meta charset="UTF-8" />
   <title>호텔 + 관광지 + 카페 + 음식점 검색 지도</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- Leaflet CSS -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
     crossorigin=""
   />
   <style>
-    body {
-      font-family: "Segoe UI", sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f9f9f9;
-      text-align: center;
-    }
-    header {
-      background: #4a90e2;
-      color: white;
-      padding: 20px;
-      font-size: 24px;
-    }
-    #search-box {
-      margin: 20px;
-    }
+    body { font-family: "Segoe UI", sans-serif; margin: 0; padding: 0; background: #f9f9f9; text-align: center; }
+    header { background: #4a90e2; color: white; padding: 20px; font-size: 24px; }
+    #search-box { margin: 20px; }
     input[type="text"], select {
-      width: 250px;
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      margin-right: 5px;
+      width: 250px; padding: 10px; font-size: 16px;
+      border: 1px solid #ccc; border-radius: 4px; margin-right: 5px;
     }
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      background: #4a90e2;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #357ab8;
-    }
-    #map {
-      width: 100%;
-      height: 450px;
-      margin-top: 10px;
-    }
-    #result-list {
-      list-style: none;
-      padding: 0;
-      max-width: 600px;
-      margin: 20px auto;
-      text-align: left;
-    }
+    button { padding: 10px 20px; font-size: 16px; background: #4a90e2; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #357ab8; }
+    #map { width: 100%; height: 450px; margin-top: 10px; }
+    #result-list { list-style: none; padding: 0; max-width: 600px; margin: 20px auto; text-align: left; }
     #result-list li {
-      background: white;
-      padding: 10px;
-      margin-bottom: 8px;
-      border-radius: 5px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      cursor: pointer;
+      background: white; padding: 10px; margin-bottom: 8px; border-radius: 5px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer;
     }
-    #result-list li:hover {
-      background: #e6f0ff;
-    }
+    #result-list li:hover { background: #e6f0ff; }
   </style>
 </head>
 <body>
-  <header>지역 검색으로 호텔 + 관광지 + 카페 + 음식점 찾기 🍽️</header>
+  <header>지역 검색으로 호텔 + 관광지 + 카페 + 음식점 찾기 🌏</header>
 
   <div id="search-box">
     <input type="text" id="keyword" placeholder="예: 서울, 부산, 제주도" />
@@ -91,21 +46,16 @@
   <div id="map"></div>
   <ul id="result-list"></ul>
 
-  <!-- Leaflet JS -->
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-  ></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
   <script>
     let map = L.map("map").setView([37.5665, 126.9780], 12);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      attribution: '&copy; OpenStreetMap contributors',
     }).addTo(map);
 
     let markers = [];
+    const proxy = "https://corsproxy.io/?"; // ✅ GitHub용 CORS 프록시
 
     async function searchRegion() {
       const keyword = document.getElementById("keyword").value.trim();
@@ -115,37 +65,30 @@
       clearMarkers();
       document.getElementById("result-list").innerHTML = "검색 중...";
 
-      // 1️⃣ 지역 이름 → 좌표 변환
+      // 1️⃣ 지역 → 좌표 변환
       const geoRes = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          keyword
-        )}`
+        proxy + encodeURIComponent(`https://nominatim.openstreetmap.org/search?format=json&q=${keyword}`)
       );
       const geoData = await geoRes.json();
       if (!geoData.length) return alert("지역을 찾을 수 없습니다.");
       const { lat, lon } = geoData[0];
       map.setView([lat, lon], 13);
 
-      // 2️⃣ 검색어 조합
-      let searchQuery = "";
-      if (category === "모두") {
-        searchQuery = `${keyword} 호텔 OR 관광지 OR 카페 OR 음식점`;
-      } else {
-        searchQuery = `${keyword} ${category}`;
-      }
+      // 2️⃣ 카테고리별 검색
+      let query =
+        category === "모두"
+          ? `${keyword} 호텔 OR 관광지 OR 카페 OR 음식점`
+          : `${keyword} ${category}`;
 
-      // 3️⃣ POI 검색
       const poiRes = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&limit=20&q=${encodeURIComponent(
-          searchQuery
-        )}`
+        proxy + encodeURIComponent(`https://nominatim.openstreetmap.org/search?format=json&limit=20&q=${query}`)
       );
       const poiData = await poiRes.json();
 
-      displayPlaces(poiData, category);
+      displayPlaces(poiData);
     }
 
-    function displayPlaces(data, category) {
+    function displayPlaces(data) {
       const list = document.getElementById("result-list");
       list.innerHTML = "";
       if (!data.length) {
@@ -153,15 +96,15 @@
         return;
       }
 
-      data.forEach((place) => {
-        const marker = L.marker([place.lat, place.lon]).addTo(map);
-        marker.bindPopup(`<b>${place.display_name}</b>`);
+      data.forEach((p) => {
+        const marker = L.marker([p.lat, p.lon]).addTo(map);
+        marker.bindPopup(`<b>${p.display_name}</b>`);
         markers.push(marker);
 
         const li = document.createElement("li");
-        li.textContent = place.display_name;
+        li.textContent = p.display_name;
         li.onclick = () => {
-          map.setView([place.lat, place.lon], 16);
+          map.setView([p.lat, p.lon], 16);
           marker.openPopup();
         };
         list.appendChild(li);
