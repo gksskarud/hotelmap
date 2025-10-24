@@ -7,7 +7,6 @@
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    crossorigin=""
   />
   <style>
     body { font-family: "Segoe UI", sans-serif; margin: 0; padding: 0; background: #f9f9f9; text-align: center; }
@@ -34,11 +33,11 @@
   <div id="search-box">
     <input type="text" id="keyword" placeholder="예: 서울, 부산, 제주도" />
     <select id="category">
-      <option value="호텔">호텔</option>
-      <option value="관광지">관광지</option>
-      <option value="카페">카페</option>
-      <option value="음식점">음식점</option>
-      <option value="모두">모두 검색</option>
+      <option value="hotel">호텔</option>
+      <option value="tourism">관광지</option>
+      <option value="cafe">카페</option>
+      <option value="restaurant">음식점</option>
+      <option value="all">모두 검색</option>
     </select>
     <button onclick="searchRegion()">검색</button>
   </div>
@@ -46,16 +45,17 @@
   <div id="map"></div>
   <ul id="result-list"></ul>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
+    const apiKey = "12fc29b53c4f41c7bff006089808d0ad"; // ✅ 당신의 Geoapify 키
     let map = L.map("map").setView([37.5665, 126.9780], 12);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; OpenStreetMap contributors',
-    }).addTo(map);
+    L.tileLayer(
+      `https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=${apiKey}`,
+      { attribution: "© OpenStreetMap contributors © Geoapify" }
+    ).addTo(map);
 
     let markers = [];
-    const proxy = "https://corsproxy.io/?"; // ✅ GitHub용 CORS 프록시
 
     async function searchRegion() {
       const keyword = document.getElementById("keyword").value.trim();
@@ -65,27 +65,36 @@
       clearMarkers();
       document.getElementById("result-list").innerHTML = "검색 중...";
 
-      // 1️⃣ 지역 → 좌표 변환
-      const geoRes = await fetch(
-        proxy + encodeURIComponent(`https://nominatim.openstreetmap.org/search?format=json&q=${keyword}`)
-      );
+      // 1️⃣ 지역 이름으로 좌표 검색
+      const geoUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(keyword)}&apiKey=${apiKey}`;
+      const geoRes = await fetch(geoUrl);
       const geoData = await geoRes.json();
-      if (!geoData.length) return alert("지역을 찾을 수 없습니다.");
-      const { lat, lon } = geoData[0];
+
+      if (!geoData.features.length) {
+        alert("지역을 찾을 수 없습니다.");
+        return;
+      }
+
+      const { lat, lon } = geoData.features[0].properties;
       map.setView([lat, lon], 13);
 
-      // 2️⃣ 카테고리별 검색
-      let query =
-        category === "모두"
-          ? `${keyword} 호텔 OR 관광지 OR 카페 OR 음식점`
-          : `${keyword} ${category}`;
+      // 2️⃣ 주변 장소 검색
+      const categories =
+        category === "all"
+          ? "accommodation.hotel,tourism.attraction,catering.restaurant,catering.cafe"
+          : category === "hotel"
+          ? "accommodation.hotel"
+          : category === "tourism"
+          ? "tourism.attraction"
+          : category === "cafe"
+          ? "catering.cafe"
+          : "catering.restaurant";
 
-      const poiRes = await fetch(
-        proxy + encodeURIComponent(`https://nominatim.openstreetmap.org/search?format=json&limit=20&q=${query}`)
-      );
+      const poiUrl = `https://api.geoapify.com/v2/places?categories=${categories}&filter=circle:${lon},${lat},5000&limit=20&apiKey=${apiKey}`;
+      const poiRes = await fetch(poiUrl);
       const poiData = await poiRes.json();
 
-      displayPlaces(poiData);
+      displayPlaces(poiData.features);
     }
 
     function displayPlaces(data) {
@@ -97,14 +106,19 @@
       }
 
       data.forEach((p) => {
-        const marker = L.marker([p.lat, p.lon]).addTo(map);
-        marker.bindPopup(`<b>${p.display_name}</b>`);
+        const [lon, lat] = p.geometry.coordinates;
+        const name = p.properties.name || "이름 없음";
+        const addr = p.properties.address_line2 || "";
+        const cat = p.properties.categories?.[0] || "";
+
+        const marker = L.marker([lat, lon]).addTo(map);
+        marker.bindPopup(`<b>${name}</b><br>${addr}<br><small>${cat}</small>`);
         markers.push(marker);
 
         const li = document.createElement("li");
-        li.textContent = p.display_name;
+        li.textContent = `[${cat}] ${name} (${addr})`;
         li.onclick = () => {
-          map.setView([p.lat, p.lon], 16);
+          map.setView([lat, lon], 16);
           marker.openPopup();
         };
         list.appendChild(li);
