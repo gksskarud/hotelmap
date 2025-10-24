@@ -91,7 +91,6 @@
       transform: scale(1.05);
     }
 
-    /* 🗑 삭제 버튼 전용 스타일 */
     #clear-history {
       background: rgba(255, 80, 80, 0.8);
       margin-left: 5px;
@@ -284,8 +283,15 @@
         marker.bindPopup(`<b>${name}</b><br>${addr}<br><small>${cat}</small>`);
         markers.push(marker);
 
+        // ✅ 카테고리별 이모지 지정
+        let emoji = "📍";
+        if (cat.includes("hotel")) emoji = "🏨";
+        else if (cat.includes("cafe")) emoji = "☕";
+        else if (cat.includes("tourism")) emoji = "🏞️";
+        else if (cat.includes("restaurant")) emoji = "🍽️";
+
         const li = document.createElement("li");
-        li.innerHTML = `<strong>[${cat}]</strong> ${name}<br><small>${addr}</small>`;
+        li.innerHTML = `<strong>${emoji} [${cat}]</strong> ${name}<br><small>${addr}</small>`;
         li.onclick = () => {
           map.flyTo([lat, lon], 16);
           marker.openPopup();
@@ -321,7 +327,6 @@
       searchRegion();
     }
 
-    /* 🗑 전체 삭제 함수 */
     function clearHistory() {
       localStorage.removeItem("searchHistory");
       updateHistoryUI();
