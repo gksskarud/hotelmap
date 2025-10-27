@@ -2,303 +2,106 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>🌴 여행지 추천 지도</title>
+  <title>호텔 + 관광지 + 카페 + 음식점 검색 지도</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
-    body {
-      font-family: "Segoe UI", sans-serif;
-      margin: 0;
-      padding: 0;
-      text-align: center;
-      transition: background 0.5s, color 0.5s;
-      color: #fff;
-      background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-        url("https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80")
-        no-repeat center center fixed;
-      background-size: cover;
-    }
-
-    header {
-      background: rgba(0, 0, 0, 0.5);
-      color: white;
-      padding: 20px;
-      font-size: 26px;
-      font-weight: bold;
-      backdrop-filter: blur(5px);
-      border-bottom: 1px solid rgba(255,255,255,0.2);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 15px;
-    }
-
-    #theme-toggle {
-      padding: 8px 15px;
-      font-size: 15px;
-      background: rgba(255,255,255,0.2);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    #theme-toggle:hover {
-      background: rgba(255,255,255,0.35);
-      transform: scale(1.05);
-    }
-
-    #search-box {
-      margin: 25px auto;
-      background: rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(10px);
-      padding: 15px 20px;
-      border-radius: 15px;
-      box-shadow: 0 4px 25px rgba(0, 0, 0, 0.3);
-      display: inline-block;
-      color: white;
-    }
-
-    input, select {
-      width: 220px;
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.1);
-      color: white;
-      margin-right: 5px;
-      outline: none;
-    }
-
-    input::placeholder { color: #ddd; }
-
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      background: #4a90e2;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    button:hover {
-      background: #357ab8;
-      transform: scale(1.05);
-    }
-
-    #clear-history {
-      background: rgba(255, 80, 80, 0.8);
-      margin-left: 5px;
-    }
-
-    #clear-history:hover {
-      background: rgba(255, 50, 50, 1);
-    }
-
-    #map {
-      width: 90%;
-      height: 450px;
-      margin: 20px auto;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-    }
-
-    #result-list {
-      list-style: none;
-      padding: 0;
-      max-width: 700px;
-      margin: 20px auto;
-      text-align: left;
-    }
-
-    #result-list li {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 10px 15px;
-      margin-bottom: 8px;
-      border-radius: 8px;
-      box-shadow: 0 1px 4px rgba(255, 255, 255, 0.2);
-      cursor: pointer;
-      transition: 0.25s;
-    }
-
-    #result-list li:hover {
-      background: rgba(255, 255, 255, 0.25);
-      transform: scale(1.03);
-    }
-
-    .leaflet-marker-icon {
-      transition: transform 0.3s ease;
-    }
-    .leaflet-marker-icon:hover {
-      transform: scale(1.3);
-    }
-
-    body.light-mode {
-      background: linear-gradient(rgba(255,255,255,0.4), rgba(255,255,255,0.4)),
-        url("https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80")
-        no-repeat center center fixed;
-      background-size: cover;
-      color: #222;
-    }
-
-    body.light-mode header {
-      background: rgba(255,255,255,0.7);
-      color: #222;
-      border-bottom: 1px solid rgba(0,0,0,0.2);
-    }
-
-    body.light-mode #search-box {
-      background: rgba(255, 255, 255, 0.8);
-      color: #222;
-    }
-
-    body.light-mode input,
-    body.light-mode select {
-      background: rgba(255, 255, 255, 0.9);
-      color: #222;
-      border: 1px solid #ccc;
-    }
-
-    body.light-mode #result-list li {
-      background: rgba(255, 255, 255, 0.8);
-      color: #222;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-    }
-
+    body { font-family: "Pretendard", sans-serif; margin: 0; padding: 0; text-align: center; }
+    #map { height: 85vh; width: 100%; }
+    #controls { padding: 10px; background: #f0f0f0; }
+    input, select, button { margin: 5px; padding: 8px; font-size: 15px; border-radius: 8px; border: 1px solid #ccc; }
+    button { cursor: pointer; background-color: #0078ff; color: white; border: none; }
+    button:hover { background-color: #005fcc; }
+    img.icon { width: 40px; height: 40px; border-radius: 8px; }
   </style>
 </head>
 <body>
-  <header>
-    🌴 여행지 추천 지도
-    <button id="theme-toggle" onclick="toggleTheme()">🌙 다크 모드</button>
-  </header>
-
-  <div id="search-box">
-    <input type="text" id="keyword" placeholder="예: 제주도, 부산, 하와이" />
+  <div id="controls">
+    <input type="text" id="keyword" placeholder="검색어 입력 (예: 제주 카페)" />
     <select id="category">
-      <option value="hotel">호텔</option>
+      <option value="accommodation">호텔</option>
       <option value="tourism">관광지</option>
       <option value="cafe">카페</option>
       <option value="restaurant">음식점</option>
-      <option value="all">모두 검색</option>
     </select>
-    <button onclick="searchRegion()">검색</button>
+    <button onclick="searchPlaces()">검색</button>
     <select id="history" onchange="loadHistory(this.value)">
       <option value="">📜 최근 검색</option>
     </select>
-    <button id="clear-history" onclick="clearHistory()">🗑 삭제</button>
+    <button onclick="clearHistory()">🗑 전체삭제</button>
   </div>
 
   <div id="map"></div>
-  <ul id="result-list"></ul>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    const apiKey = "12fc29b53c4f41c7bff006089808d0ad";
-    let map = L.map("map").setView([37.5665, 126.9780], 12);
-    let currentLayer;
+    const map = L.map("map").setView([33.389, 126.53], 10);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+    }).addTo(map);
 
-    function setMapStyle(darkMode = true) {
-      if (currentLayer) map.removeLayer(currentLayer);
-      const style = darkMode ? "dark-matter" : "osm-bright";
-      currentLayer = L.tileLayer(
-        `https://maps.geoapify.com/v1/tile/${style}/{z}/{x}/{y}.png?apiKey=${apiKey}`,
-        { attribution: "© OpenStreetMap contributors © Geoapify" }
-      ).addTo(map);
-    }
-    setMapStyle(true);
+    // 카테고리별 아이콘 이미지
+    const icons = {
+      accommodation: L.icon({ iconUrl: "https://cdn-icons-png.flaticon.com/512/139/139899.png", iconSize: [40, 40] }),
+      cafe: L.icon({ iconUrl: "https://cdn-icons-png.flaticon.com/512/2950/2950731.png", iconSize: [40, 40] }),
+      restaurant: L.icon({ iconUrl: "https://cdn-icons-png.flaticon.com/512/1046/1046784.png", iconSize: [40, 40] }),
+      tourism: L.icon({ iconUrl: "https://cdn-icons-png.flaticon.com/512/684/684908.png", iconSize: [40, 40] }),
+      shop: L.icon({ iconUrl: "https://cdn-icons-png.flaticon.com/512/2331/2331970.png", iconSize: [40, 40] }),
+      service: L.icon({ iconUrl: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png", iconSize: [40, 40] }),
+      etc: L.icon({ iconUrl: "https://cdn-icons-png.flaticon.com/512/2910/2910768.png", iconSize: [40, 40] }),
+    };
 
     let markers = [];
 
-    async function searchRegion() {
-      let keyword = document.getElementById("keyword").value.trim();
+    function searchPlaces() {
+      const keyword = document.getElementById("keyword").value.trim();
       const category = document.getElementById("category").value;
-      if (!keyword) return alert("지역명을 입력하세요!");
-
-      clearMarkers();
-      document.getElementById("result-list").innerHTML = "<li>🔍 검색 중...</li>";
-
-      if (/[가-힣]/.test(keyword)) {
-        const trans = await fetch(
-          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=en&dt=t&q=${encodeURIComponent(keyword)}`
-        );
-        const data = await trans.json();
-        keyword = data[0][0][0];
-      }
-
-      const geoUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(keyword)}&apiKey=${apiKey}`;
-      const geoRes = await fetch(geoUrl);
-      const geoData = await geoRes.json();
-
-      if (!geoData.features.length) {
-        alert("지역을 찾을 수 없습니다.");
-        document.getElementById("result-list").innerHTML = "";
+      if (!keyword) {
+        alert("검색어를 입력하세요!");
         return;
       }
 
-      const { lat, lon } = geoData.features[0].properties;
-      map.flyTo([lat, lon], 13, { animate: true, duration: 1 });
+      const apiUrl = `https://api.geoapify.com/v2/places?categories=${category}&filter=countrycode:kr&name=${encodeURIComponent(keyword)}&limit=20&apiKey=YOUR_API_KEY`;
 
-      const categories =
-        category === "all"
-          ? "accommodation.hotel,tourism.attraction,catering.restaurant,catering.cafe"
-          : category === "hotel"
-          ? "accommodation.hotel"
-          : category === "tourism"
-          ? "tourism.attraction"
-          : category === "cafe"
-          ? "catering.cafe"
-          : "catering.restaurant";
+      fetch(apiUrl)
+        .then((res) => res.json())
+        .then((data) => {
+          clearMarkers();
+          if (data.features.length === 0) {
+            alert("검색 결과가 없습니다.");
+            return;
+          }
 
-      const poiUrl = `https://api.geoapify.com/v2/places?categories=${categories}&filter=circle:${lon},${lat},5000&limit=20&apiKey=${apiKey}`;
-      const poiRes = await fetch(poiUrl);
-      const poiData = await poiRes.json();
+          data.features.forEach((p) => {
+            const cat = p.properties.categories ? p.properties.categories[0] : "";
+            let displayCat = "";
+            if (cat.includes("accommodation")) displayCat = "호텔";
+            else if (cat.includes("tourism")) displayCat = "관광지";
+            else if (cat.includes("cafe")) displayCat = "카페";
+            else if (cat.includes("restaurant")) displayCat = "음식점";
+            else if (cat.includes("shop")) displayCat = "상점";
+            else if (cat.includes("service")) displayCat = "서비스";
+            else displayCat = "기타";
 
-      displayPlaces(poiData.features);
-      saveHistory(keyword);
-    }
+            const icon =
+              cat.includes("accommodation") ? icons.accommodation :
+              cat.includes("tourism") ? icons.tourism :
+              cat.includes("cafe") ? icons.cafe :
+              cat.includes("restaurant") ? icons.restaurant :
+              cat.includes("shop") ? icons.shop :
+              cat.includes("service") ? icons.service :
+              icons.etc;
 
-    function displayPlaces(data) {
-      const list = document.getElementById("result-list");
-      list.innerHTML = "";
-      if (!data.length) {
-        list.innerHTML = "<li>검색 결과가 없습니다.</li>";
-        return;
-      }
+            const marker = L.marker([p.geometry.coordinates[1], p.geometry.coordinates[0]], { icon }).addTo(map);
+            marker.bindPopup(`<b>[${displayCat}] ${p.properties.name}</b><br>${p.properties.address_line2 || ""}`);
+            markers.push(marker);
+          });
 
-      data.forEach((p) => {
-        const [lon, lat] = p.geometry.coordinates;
-        const name = p.properties.name || "이름 없음";
-        const addr = p.properties.address_line2 || "";
-        const cat = p.properties.categories?.[0] || "기타";
-
-        // 🔤 카테고리 영어를 한글로 변환
-        let displayCat = "기타";
-        if (cat.includes("accommodation")) displayCat = "호텔";
-        else if (cat.includes("tourism")) displayCat = "관광지";
-        else if (cat.includes("cafe")) displayCat = "카페";
-        else if (cat.includes("restaurant")) displayCat = "음식점";
-
-        const marker = L.marker([lat, lon]).addTo(map);
-        marker.bindPopup(`<b>${name}</b><br>${addr}<br><small>${displayCat}</small>`);
-        markers.push(marker);
-
-        const li = document.createElement("li");
-        li.innerHTML = `<strong>[${displayCat}]</strong> ${name}<br><small>${addr}</small>`;
-        li.onclick = () => {
-          map.flyTo([lat, lon], 16);
-          marker.openPopup();
-          window.open(`https://map.naver.com/v5/search/${encodeURIComponent(name)}`, "_blank");
-        };
-        list.appendChild(li);
-      });
+          saveHistory(keyword);
+          updateHistoryUI();
+          map.setView([data.features[0].geometry.coordinates[1], data.features[0].geometry.coordinates[0]], 13);
+        })
+        .catch((err) => console.error(err));
     }
 
     function clearMarkers() {
@@ -309,43 +112,35 @@
     function saveHistory(keyword) {
       let history = JSON.parse(localStorage.getItem("searchHistory") || "[]");
       if (!history.includes(keyword)) {
-        history.push(keyword);
+        history.unshift(keyword);
+        if (history.length > 10) history.pop();
         localStorage.setItem("searchHistory", JSON.stringify(history));
-        updateHistoryUI();
       }
     }
 
     function updateHistoryUI() {
+      const select = document.getElementById("history");
+      select.innerHTML = '<option value="">📜 최근 검색</option>';
       const history = JSON.parse(localStorage.getItem("searchHistory") || "[]");
-      const sel = document.getElementById("history");
-      sel.innerHTML = `<option value="">📜 최근 검색</option>` + history.map(h => `<option value="${h}">${h}</option>`).join("");
+      history.forEach((h) => {
+        const option = document.createElement("option");
+        option.value = h;
+        option.textContent = h;
+        select.appendChild(option);
+      });
     }
 
     function loadHistory(value) {
-      if (!value) return;
-      document.getElementById("keyword").value = value;
-      searchRegion();
+      if (value) {
+        document.getElementById("keyword").value = value;
+        searchPlaces();
+      }
     }
 
     function clearHistory() {
       localStorage.removeItem("searchHistory");
       updateHistoryUI();
       alert("최근 검색 기록이 모두 삭제되었습니다.");
-    }
-
-    function toggleTheme() {
-      const body = document.body;
-      const btn = document.getElementById("theme-toggle");
-      const isDark = !body.classList.contains("light-mode");
-      if (isDark) {
-        body.classList.add("light-mode");
-        btn.textContent = "🌙 다크 모드";
-        setMapStyle(false);
-      } else {
-        body.classList.remove("light-mode");
-        btn.textContent = "☀️ 라이트 모드";
-        setMapStyle(true);
-      }
     }
 
     updateHistoryUI();
