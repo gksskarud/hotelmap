@@ -91,7 +91,6 @@
       transform: scale(1.05);
     }
 
-    /* 🗑 삭제 버튼 전용 스타일 */
     #clear-history {
       background: rgba(255, 80, 80, 0.8);
       margin-left: 5px;
@@ -280,12 +279,19 @@
         const addr = p.properties.address_line2 || "";
         const cat = p.properties.categories?.[0] || "기타";
 
+        // 🔤 카테고리 영어를 한글로 변환
+        let displayCat = "기타";
+        if (cat.includes("accommodation")) displayCat = "호텔";
+        else if (cat.includes("tourism")) displayCat = "관광지";
+        else if (cat.includes("cafe")) displayCat = "카페";
+        else if (cat.includes("restaurant")) displayCat = "음식점";
+
         const marker = L.marker([lat, lon]).addTo(map);
-        marker.bindPopup(`<b>${name}</b><br>${addr}<br><small>${cat}</small>`);
+        marker.bindPopup(`<b>${name}</b><br>${addr}<br><small>${displayCat}</small>`);
         markers.push(marker);
 
         const li = document.createElement("li");
-        li.innerHTML = `<strong>[${cat}]</strong> ${name}<br><small>${addr}</small>`;
+        li.innerHTML = `<strong>[${displayCat}]</strong> ${name}<br><small>${addr}</small>`;
         li.onclick = () => {
           map.flyTo([lat, lon], 16);
           marker.openPopup();
@@ -321,7 +327,6 @@
       searchRegion();
     }
 
-    /* 🗑 전체 삭제 함수 */
     function clearHistory() {
       localStorage.removeItem("searchHistory");
       updateHistoryUI();
